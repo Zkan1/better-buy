@@ -2,9 +2,9 @@
 
 **Proje Tanımı:** Better-Buy, Best Buy gibi bir e-ticaret platformunun temel özelliklerini içeren bir web uygulamasının geliştirilmesini amaçlamaktadır. Bu proje, kullanıcıların çeşitli elektronik ürünleri incelemelerine, satın almalarına ve sipariş vermelerine olanak tanıyan bir platform sunacaktır. Proje, kullanıcıların kaydolmasını, oturum açmasını, ürünleri aramasını ve filtrelemesini, ürün detaylarını görüntülemesini, sepete eklemesini ve sipariş işlemlerini gerçekleştirmesini sağlayacaktır.
 
-**Proje Kategorisi:** kategori
+**Proje Kategorisi:** E-Ticaret Sitesi
 
-**Referans Uygulama:** 
+**Referans Uygulama:** Best Buy
 
 **Uygulama Adresi:** https://www.bestbuy.com
 
