@@ -1,0 +1,1 @@
+# Fevzi Barış Demirel Gereksinimleri
