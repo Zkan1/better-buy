@@ -6,7 +6,7 @@
 
 **Referans Uygulama:** 
 
-**Uygulama Adresi:**
+**Uygulama Adresi:** https://www.bestbuy.com
 
 **Grup Adı :** HUH
 
