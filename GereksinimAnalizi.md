@@ -37,3 +37,5 @@
 **Gereksinim Dağılımları**
 
 1.[Fevzi Barış Demirel Gereksinimleri](FevziBarisGereksinim.md)
+
+2.[Özkan Kuruoğlu Gereksinimleri](OzkanKuruogluGereksinim.md)
