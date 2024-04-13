@@ -3,5 +3,5 @@
 1.[Fevzi Barış Demirel Durum Senaryoları]
 
 
-2.[Özkan Kuruoğlu Durum Senaryoları](Özkan Kuruoğlu-Durum Senaryoları.pdf)
+2.[Özkan Kuruoğlu Durum Senaryoları](ÖzkanKuruoğlu-DurumSenaryoları.pdf)
 
