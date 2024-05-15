@@ -10,13 +10,21 @@ const getDefaultCart =()=>{
     return cart;
 };
 const ShopContextProvider = (props)=>{
-    const [cartItems,setCartItems]= useState(getDefaultCart());
-    const contextValue = {all_product,cartItems };
     
-    const addToCart=(itemId)=>{
+    
+    
+    const addToCart=(itemId)=>{ // sepete ekleme ve eger eklendiyse sepette arttirma islemi.
         setCartItems((prev)=>({...prev,[itemId]:prev[itemId]+1}))
     }
 
+    const removeFromCart=(itemId)=>{  // sepetten silme fonkiyonu
+        setCartItems((prev)=>({...prev,[itemId]:prev[itemId]-1}))
+    }
+
+    const [cartItems,setCartItems]= useState(getDefaultCart());
+    //const contextValue = {all_product,cartItems,addToCart};
+
+const contextValue = {all_product,cartItems,addToCart,removeFromCart };
 
     return (
         <ShopContext.Provider value={contextValue}>
