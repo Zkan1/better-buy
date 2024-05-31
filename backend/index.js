@@ -11,7 +11,7 @@ const cors = require("cors");
 app.use(express.json());
 app.use(cors());
 
-// Database connection with MongoDB
+// MongoDB ile veritabani baglantisi
 
 mongoose.connect("mongodb+srv://barisozkan:dq2uxb5ZZuKE6qFb@cluster0.p44mla5.mongodb.net/better-buy")
 
@@ -21,7 +21,7 @@ app.get("/",(req,res)=>{
     res.send("Express App is Running")
 })
 
-// Image Storage Engine
+// Goruntu Depolama
 
 const storage = multer.diskStorage({
     destination: './upload/images',
@@ -33,7 +33,7 @@ const storage = multer.diskStorage({
 const upload = multer({storage:storage})
 
 
-// Creating Upload Enpoint for images
+// Resim yukleme endpointi
 
 app.use('/images',express.static('upload/images'))
 
@@ -119,6 +119,15 @@ app.post('/removeproduct',async(req,res)=>{
         name:req.body.name
     })
 })
+
+// Tum urunleri listelemek icin API
+
+app.get('/allproducts',async (req,res)=>{
+    let products = await Product.find({});
+    console.log("All products Fetched");
+    res.send(products);
+})
+
 app.listen(port,(error)=>{
     if (!error){
         console.log("Server Running on Port "+port)
