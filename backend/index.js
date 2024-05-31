@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
+const { type } = require("os");
 
 
 app.use(express.json());
@@ -29,6 +30,8 @@ const storage = multer.diskStorage({
         return cb(null,`${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
     }
 })
+
+
 
 const upload = multer({storage:storage})
 
@@ -126,6 +129,63 @@ app.get('/allproducts',async (req,res)=>{
     let products = await Product.find({});
     console.log("All products Fetched");
     res.send(products);
+})
+
+// Kullanici modeli icin sema olusturma
+
+const Users = mongoose.model("Users", {
+    name:{
+        type:String,
+    },
+    email:{
+        type:String,
+        unique:true,
+    },
+    password:{
+        type:String,
+    },
+    cartData:{
+        type:Object,
+    },
+    date:{
+        type:Date,
+        default:Date.now,
+    }
+})
+
+// Kullanici kayit olma semasi
+
+app.post('/signup',async (req,res)=>{
+    
+    let check = await Users.findOne({email:req.body.email});  //veritabaninda e-posta adresi ile bir kullanici olup olmadıgini kontrol eder
+    if(check) {
+        return res.status(400).json({success:false,errors:"existing user found with same email address"})  // var ise boyle bir email var hatasi dondurur
+    }
+
+    let cart = {};
+    for (let i = 0; i < 300; i++) {  //sepet icin baslangicta 300 urunluk bos bir obje olusturur
+        cart[i]= 0;
+        
+    }
+
+    const user = new Users({  // yeni bir kullanici nesnesi
+        name:req.body.username,
+        email:req.body.email,
+        password:req.body.password,
+        cartData:cart,
+    })
+
+    await user.save();  //kullaniciyi kayit eder
+
+    const data = {  //JWT oluşturmak için gerekli kullanıcı verilerini hazırlar
+        user:{
+            id:user.id
+        }
+    }
+
+    const token = jwt.sign(data,'secret_ecom');  // Kullanıcıya bir JWT (JSON Web Token) oluşturur ve 'secret_ecom' anahtarı ile imzalar
+    res.json({success:true,token})  //kullanici kaydi basariyla tamamlandiini ve tokeni dondurur.
+
 })
 
 app.listen(port,(error)=>{
