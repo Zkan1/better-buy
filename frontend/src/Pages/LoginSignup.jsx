@@ -37,29 +37,40 @@ const LoginSignup = () => {
         alert(responseData.errors)
       }
   }
-  const signup = async()=>{
-    console.log("signup çalışıyor",formData);
+  const signup = async() => {
+    // Kullanıcının kaydolma işlemi başladığını konsola yazdırır.
+    console.log("signup çalışıyor", formData);
+    
+    // Sunucudan dönen yanıtı depolamak için bir değişken tanımlar.
     let responseData;
-    await fetch('http://localhost:4000/signup' ,{
-      method: 'POST',
-      headers:{
-        Accept: 'application/form-data',
-        'Content-Type' : 'application/json',
+    
+    // Sunucuya POST isteği gönderir.
+    await fetch('http://localhost:4000/signup', {
+        method: 'POST', // İsteğin HTTP metodunu belirtir (POST).
+        headers: {
+            Accept: 'application/form-data', // Sunucunun kabul etmesini beklediğimiz yanıt türünü belirtir (düzeltilecek).
+            'Content-Type': 'application/json', // Gönderilen verinin türünü belirtir (JSON formatında).
+        },
+        body: JSON.stringify(formData), // formData nesnesini JSON formatına dönüştürerek isteğin gövdesine ekler.
+    })
+    // Yanıtı JSON formatına dönüştürür ve responseData değişkenine atar.
+    .then((response) => response.json())
+    .then((data) => responseData = data);
 
-      },
-      body: JSON.stringify(formData),
-
-    }).then((response)=> response.json()).then((data)=> responseData=data);
-
+    // Eğer yanıtın success (başarı) durumu true ise,
     if (responseData.success) {
-      localStorage.setItem('auth-token', responseData.token);
-      window.location.replace("/");
-      
+        // Yanıt içerisindeki token değerini localStorage'a kaydeder.
+        localStorage.setItem('auth-token', responseData.token);
+        // Kullanıcıyı anasayfaya yönlendirir.
+        window.location.replace("/");
     }
-    else{
-      alert(responseData.errors)
+    // Eğer yanıtın success durumu false ise,
+    else {
+        // Kullanıcıya hata mesajlarını bir uyarı penceresinde gösterir.
+        alert(responseData.errors);
     }
-  }
+}
+
 
   return (
     <div className='loginsignup'>

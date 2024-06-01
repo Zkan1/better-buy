@@ -1,15 +1,28 @@
-import React, { createContext, useState } from "react";
-import all_product from "../Components/Assets/all_product";
+import React, { createContext, useEffect, useState } from "react";
+
 
 export const ShopContext = createContext(null);
 const getDefaultCart = () => {
   let cart = {};
-  for (let index = 0; index < all_product.length + 1; index++) {
+  for (let index = 0; index < 300 + 1; index++) {
     cart[index] = 0;
   }
   return cart;
 };
 const ShopContextProvider = (props) => {
+
+  const[cartItems, setCartItems] = useState(getDefaultCart());
+  const[all_product,setAll_Product] = useState([]);
+
+  useEffect(() => { 
+    // Bileşen yüklendiğinde çalışacak bir yan etki (side effect) tanımlanır.
+    fetch('http://localhost:4000/allproducts') // 'http://localhost:4000/allproducts' adresine bir GET isteği gönderilir.
+      
+      .then((response) => response.json()) // Yanıt JSON formatında parse edilir.
+      
+      .then((data) => setAll_Product(data)); // Parse edilen JSON verisi (ürünler) all_product durumuna ayarlanır.
+      
+  }, []); 
   const addToCart = (itemId) => {
     // sepete ekleme ve eger eklendiyse sepette arttirma islemi.
     setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
@@ -35,16 +48,14 @@ const ShopContextProvider = (props) => {
   const getTotalCartItems = () => {
     let totalItem = 0;
     for (const item in cartItems) {
-      {
-        if (cartItems[item] > 0) {
-          totalItem += cartItems[item];
-        }
+      if (cartItems[item] > 0) {
+        totalItem += cartItems[item];;
       }
     }
     return totalItem;
   };
 
-  const [cartItems, setCartItems] = useState(getDefaultCart());
+  
   //const contextValue = {all_product,cartItems,addToCart};
 
   const contextValue = {
