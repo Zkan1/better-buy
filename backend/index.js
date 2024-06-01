@@ -187,6 +187,31 @@ app.post('/signup',async (req,res)=>{
     res.json({success:true,token})  //kullanici kaydi basariyla tamamlandiini ve tokeni dondurur.
 
 })
+// kullanıcı giriş için endpoint
+app.post('/login',async (req,res)=>{
+    let user = await Users.findOne({email:req.body.email});
+    if(user){
+        const passCompare = req.body.password === user.password;//şifre karşılaştırması
+        if(passCompare){
+            const data = {
+                user:{
+                    id:user.id
+                }
+            }
+            const token = jwt.sign(data,'secret_ecom');
+            res.json({success:true,token});// eğer şifre doğruysa
+        }
+        else{
+            res.json({success:false,errors:"Wrong password"});
+        }
+    }
+    else{
+        res.json({success:false,errors:"Wrong email id"});
+    }
+})
+
+
+
 
 app.listen(port,(error)=>{
     if (!error){
