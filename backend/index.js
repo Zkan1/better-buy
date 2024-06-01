@@ -220,6 +220,15 @@ app.get('/newcollections', async (req, res) => {
     res.send(newcollection);
 })
 
+//Popular in Women bolumunu olusturma endpointi
+
+app.get('/popularinwomen', async (req, res) => {
+	let products = await Product.find({category: "women"});
+    let popular_in_women = products.splice(0,  4);
+    console.log("Popular In Women Fetched");
+    res.send(popular_in_women);
+});
+
 
 
 
