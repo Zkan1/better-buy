@@ -21,16 +21,60 @@ const ShopContextProvider = (props) => {
       .then((response) => response.json()) // Yanıt JSON formatında parse edilir.
       
       .then((data) => setAll_Product(data)); // Parse edilen JSON verisi (ürünler) all_product durumuna ayarlanır.
+
+      if (localStorage.getItem('auth-token')) {
+        fetch('http://localhost:4000/getcart',{
+          method: 'POST',
+          headers:{
+            Accept:'application/form-data',
+            'auth-token': `${localStorage.getItem('auth-token')}`,
+            'Content-Type': 'application/json',
+          },
+          body:"",
+
+        }).then((response)=>response.json())
+        .then((data)=>setCartItems(data));
+      }
       
   }, []); 
   const addToCart = (itemId) => {
     // sepete ekleme ve eger eklendiyse sepette arttirma islemi.
     setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
+
+    if (localStorage.getItem('auth-token')) {
+      fetch('http://localhost:4000/addtocart',{
+        method:'POST',
+        headers:{
+          Accept:'application/form-data',
+          'auth-token': `${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json',
+        },
+        body:JSON.stringify({"itemId":itemId}),
+      })
+      .then((response)=>response.json())
+      .then((data)=>console.log(data));
+
+
+    }
   };
 
   const removeFromCart = (itemId) => {
     // sepetten silme fonkiyonu
     setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
+
+    if (localStorage.getItem('auth-token')) {
+      fetch('http://localhost:4000/removefromcart',{
+        method:'POST',
+        headers:{
+          Accept:'application/form-data',
+          'auth-token': `${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json',
+        },
+        body:JSON.stringify({"itemId":itemId}),
+      })
+      .then((response)=>response.json())
+      .then((data)=>console.log(data));
+    }
   };
 
   const getTotalCartAmount = () => {
