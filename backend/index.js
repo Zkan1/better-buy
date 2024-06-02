@@ -285,6 +285,17 @@ app.post('/getcart', fetchUser, async (req, res) => {
   
 })
 
+//Kullanici Bilgileri endpoint
+app.get('/user', fetchUser, async (req, res) => {
+    try {
+        let user = await Users.findById(req.user.id).select('-password');
+        res.json(user);
+    } catch (error) {
+        res.status(500).send("Server Error");
+    }
+});
+
+
 
 
 
