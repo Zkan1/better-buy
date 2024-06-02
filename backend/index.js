@@ -14,40 +14,45 @@ const port = process.env.PORT || 4000;
 app.use(express.json());
 app.use(cors());
 
-// MongoDB ile veritabani baglantisi
+// MongoDB bağlantısı
+const mongoURI = "mongodb+srv://<username>:<password>@cluster0.mongodb.net/<database_name>";
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.log(err));
 
-mongoose.connect("mongodb+srv://barisozkan:dq2uxb5ZZuKE6qFb@cluster0.p44mla5.mongodb.net/better-buy")
+// AWS S3 Config
+const s3 = new aws.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
+});
 
-// API Creation
-
-app.get("/",(req,res)=>{
-    res.send("Express App is Running")
-})
-
-// Goruntu Depolama
-
-const storage = multer.diskStorage({
-    destination: './upload/images',
-    filename:(req,file,cb)=>{
-        return cb(null,`${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
-    }
-})
-
-
-
-const upload = multer({storage:storage})
-
-
-// Resim yukleme endpointi
-
-app.use('/images',express.static('upload/images'))
-
-app.post("/upload",upload.single('product'),(req,res)=>{
-    res.json({
-        success:1,
-        image_url:`http://localhost:${port}/images/${req.file.filename}`
+const upload = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: process.env.AWS_BUCKET_NAME,
+        acl: 'public-read',
+        metadata: function (req, file, cb) {
+            cb(null, { fieldName: file.fieldname });
+        },
+        key: function (req, file, cb) {
+            cb(null, Date.now().toString() + path.extname(file.originalname));
+        }
     })
-})
+});
+
+// Ana sayfa rotası
+app.get("/", (req, res) => {
+    res.send("Express App is Running");
+});
+
+// Resim yükleme rotası
+app.post("/upload", upload.single('product'), (req, res) => {
+    res.json({
+        success: 1,
+        image_url: req.file.location
+    });
+});
 
 // Ürün modeli
 const Product = mongoose.model("Product", {
@@ -249,19 +254,8 @@ app.post('/removefromcart', fetchUser, async (req, res) => {
 app.post('/getcart', fetchUser, async (req, res) => {
     let userData = await User.findOne({ _id: req.user.id });
     res.json(userData.cartData);
-  
-})
+});
 
-
-
-
-app.listen(port,(error)=>{
-    if (!error){
-        console.log("Server Running on Port "+port)
-        
-    }
-    else{
-        console.log("Error : +error")
-    }
-})
-
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
