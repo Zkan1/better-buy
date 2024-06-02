@@ -13,8 +13,8 @@ app.use(express.json());
 app.use(cors());
 
 // MongoDB ile veritabani baglantisi
-
-mongoose.connect("mongodb+srv://barisozkan:dq2uxb5ZZuKE6qFb@cluster0.p44mla5.mongodb.net/better-buy")
+const mongoURI = "mongodb+srv://barisozkan:dq2uxb5ZZuKE6qFb@cluster0.p44mla5.mongodb.net/better-buy"
+mongoose.connect(mongoURI)
 
 // API Creation
 
