@@ -2,40 +2,61 @@ const express = require('express');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const path = require('path');
+const { GridFsStorage } = require('multer-gridfs-storage');
+const Grid = require('gridfs-stream');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// MongoDB ile veritabani baglantisi
+// MongoDB bağlantısı ve GridFS ayarları
 const mongoURI = "mongodb+srv://barisozkan:dq2uxb5ZZuKE6qFb@cluster0.p44mla5.mongodb.net/better-buy";
-mongoose.connect(mongoURI);
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const conn = mongoose.connection;
+let gfs;
+conn.once('open', () => {
+    gfs = Grid(conn.db, mongoose.mongo);
+    gfs.collection('uploads');
+});
+
+// GridFS depolama motorunu ayarlayın
+const storage = new GridFsStorage({
+    url: mongoURI,
+    file: (req, file) => {
+        return {
+            filename: `${Date.now()}_${path.basename(file.originalname)}`,
+            bucketName: 'uploads'
+        };
+    }
+});
+
+const upload = multer({ storage });
 
 // API Creation
 app.get("/", (req, res) => {
     res.send("Express App is Running");
 });
 
-// Goruntu Depolama
-const storage = multer.diskStorage({
-    destination: './upload/images',
-    filename: (req, file, cb) => {
-        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
-    }
-});
-
-const upload = multer({ storage: storage });
-
-// Resim yukleme endpointi
-app.use('/images', express.static('upload/images'));
-
+// Resim yükleme endpointi
 app.post("/upload", upload.single('product'), (req, res) => {
-    const baseUrl = req.protocol + '://' + req.get('host');
     res.json({
         success: 1,
-        image_url: `${baseUrl}/images/${req.file.filename}`
+        file: req.file
+    });
+});
+
+// Dosya görüntüleme endpointi
+app.get('/image/:filename', (req, res) => {
+    gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
+        if (!file || file.length === 0) {
+            return res.status(404).json({ err: 'No file exists' });
+        }
+
+        const readstream = gfs.createReadStream(file.filename);
+        readstream.pipe(res);
     });
 });
 
@@ -69,7 +90,7 @@ const Product = mongoose.model("Product", {
         type: Date,
         default: Date.now,
     },
-    avilable: {
+    available: {
         type: Boolean,
         default: true,
     },
@@ -99,7 +120,7 @@ app.post('/addproduct', async (req, res) => {
     });
 });
 
-//API ürün silme
+// API ürün silme
 app.post('/removeproduct', async (req, res) => {
     await Product.findOneAndDelete({ id: req.body.id });
     res.json({
