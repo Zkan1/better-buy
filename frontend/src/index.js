@@ -4,12 +4,15 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import ShopContextProvider from './Context/ShopContext'
+import { UserProvider } from './Context/UserContext'; // Yeni ekleme
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <ShopContextProvider>
-    <App />
-  </ShopContextProvider>
+  <UserProvider> {/* Yeni ekleme */}
+      <ShopContextProvider>
+        <App />
+      </ShopContextProvider>
+    </UserProvider>
 );
 
 // If you want to start measuring performance in your app, pass a function
