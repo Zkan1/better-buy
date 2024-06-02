@@ -40,10 +40,11 @@ const upload = multer({storage:storage})
 
 app.use('/images',express.static('upload/images'))
 
-app.post("/upload",upload.single('product'),(req,res)=>{
+app.post("/upload",upload.single('product'),(req,res)=>{//const baseurl ile url dinamik olarak uygulamanın çalıştığı domanini kullanacak
+    const baseUrl = req.protocol + '://' + req.get('host');
     res.json({
         success:1,
-        image_url:`http://localhost:${port}/images/${req.file.filename}`
+        image_url: `${baseUrl}/images/${req.file.filename}`
     })
 })
 
