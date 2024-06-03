@@ -254,8 +254,30 @@ app.post('/removefromcart', fetchUser, async (req, res) => {
 app.post('/getcart', fetchUser, async (req, res) => {
     let userData = await User.findOne({ _id: req.user.id });
     res.json(userData.cartData);
+  
+})
+
+//Kullanici Bilgileri endpoint
+app.get('/user', fetchUser, async (req, res) => {
+    try {
+        let user = await Users.findById(req.user.id).select('-password');
+        res.json(user);
+    } catch (error) {
+        res.status(500).send("Server Error");
+    }
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+
+
+
+
+app.listen(port,(error)=>{
+    if (!error){
+        console.log("Server Running on Port "+port)
+        
+    }
+    else{
+        console.log("Error : +error")
+    }
+})
+
