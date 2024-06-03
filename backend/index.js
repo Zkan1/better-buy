@@ -295,6 +295,55 @@ app.get('/user', fetchUser, async (req, res) => {
     }
 });
 
+// Order şemasını oluşturma
+const Order = mongoose.model("Order", {
+    id: {
+        type: Number,
+        required: true,
+    },
+    customer: {
+        type: String,
+        required: true,
+    },
+    total: {
+        type: Number,
+        required: true,
+    },
+    status: {
+        type: String,
+        required: true,
+    },
+    date: {
+        type: Date,
+        default: Date.now,
+    }
+});
+
+// Siparişleri alma endpoint'i
+app.get('/orders', async (req, res) => {
+    try {
+        let orders = await Order.find({}); // Orders yerine Order
+        console.log("All orders fetched");
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+
+// Ürün güncelleme endpoint'i
+app.post('/updateproduct', async (req, res) => {
+    const { id, name, new_price } = req.body;
+    try {
+      await Product.findOneAndUpdate({ id: id }, { name: name, new_price: new_price });
+      res.json({ success: true, message: "Product updated successfully" });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Server Error" });
+    }
+  });
+  
+
+
+
 
 
 
