@@ -1,272 +1,290 @@
-require('dotenv').config(); // .env dosyasını okumak için
-const express = require('express');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const multer = require('multer');
-const multerS3 = require('multer-s3');
-const aws = require('aws-sdk');
-const path = require('path');
-const cors = require('cors');
 
+const port = 4000;
+const express = require("express");
 const app = express();
-const port = process.env.PORT || 4000;
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const path = require("path");
+const cors = require("cors");
+const { type } = require("os");
+
 
 app.use(express.json());
 app.use(cors());
 
-// MongoDB bağlantısı
-const mongoURI = "mongodb+srv://<username>:<password>@cluster0.mongodb.net/<database_name>";
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
+// MongoDB ile veritabani baglantisi
+const mongoURI = "mongodb+srv://barisozkan:dq2uxb5ZZuKE6qFb@cluster0.p44mla5.mongodb.net/better-buy"
+mongoose.connect(mongoURI)
 
-// AWS S3 Config
-const s3 = new aws.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
-});
+// API Creation
 
-const upload = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: process.env.AWS_BUCKET_NAME,
-        acl: 'public-read',
-        metadata: function (req, file, cb) {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: function (req, file, cb) {
-            cb(null, Date.now().toString() + path.extname(file.originalname));
-        }
+app.get("/",(req,res)=>{
+    res.send("Express App is Running")
+})
+
+// Goruntu Depolama
+
+const storage = multer.diskStorage({
+    destination: './upload/images',
+    filename:(req,file,cb)=>{
+        return cb(null,`${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+    }
+})
+
+
+
+const upload = multer({storage:storage})
+
+
+// Resim yukleme endpointi
+
+app.use('/images',express.static('upload/images'))
+
+app.post("/upload",upload.single('product'),(req,res)=>{//const baseurl ile url dinamik olarak uygulamanın çalıştığı domanini kullanacak
+    const baseUrl = req.protocol + '://' + req.get('host');
+    res.json({
+        success:1,
+        image_url: `${baseUrl}/images/${req.file.filename}`
     })
-});
+})
 
-// Ana sayfa rotası
-app.get("/", (req, res) => {
-    res.send("Express App is Running");
-});
+// Ürün oluşturma şeması 
+const Product = mongoose.model("Product",{
+    id:{
+        type:Number,
+        required:true,
+    },
+    name:{
+        type:String,
+        required:true,
+    },
+    image:{
+        type:String,
+        required:true,
+    },
+    category:{
+        type:String,
+        required:true,
+    },
+    new_price:{
+        type:Number,
+        required:true,
+    },
+    old_price:{
+        type:Number,
+        required:true,
+    },
+    date:{
+        type:Date,
+        default:Date.now,
+    },
+    avilable:{
+        type:Boolean,
+        dafault:true,
+    },
+    
+})
 
-// Resim yükleme rotası
-app.post("/upload", upload.single('product'), (req, res) => {
-    res.json({
-        success: 1,
-        image_url: req.file.location
-    });
-});
-
-// Ürün modeli
-const Product = mongoose.model("Product", {
-    id: {
-        type: Number,
-        required: true,
-    },
-    name: {
-        type: String,
-        required: true,
-    },
-    image: {
-        type: String,
-        required: true,
-    },
-    category: {
-        type: String,
-        required: true,
-    },
-    new_price: {
-        type: Number,
-        required: true,
-    },
-    old_price: {
-        type: Number,
-        required: true,
-    },
-    date: {
-        type: Date,
-        default: Date.now,
-    },
-    available: {
-        type: Boolean,
-        default: true,
-    },
-});
-
-// Ürün ekleme rotası
-app.post('/addproduct', async (req, res) => {
+app.post('/addproduct',async (req,res)=>{
     let products = await Product.find({});
-    let id;
-    if (products.length > 0) {
-        let last_product = products[products.length - 1];
-        id = last_product.id + 1;
-    } else {
-        id = 1;
-    }
+    let id ;
+    if(products.length>0)
+        {
+            let last_product_array = products.slice(-1);
+            let last_product = last_product_array[0];
+            id= last_product.id+1;
+        }else{
+            id=1;
+        }//id numarasını her yeni ürün eklendiğinde 1 artırmak için eğer eklenen ilk ürünse id 1 oluyor
     const product = new Product({
-        id: id,
-        name: req.body.name,
-        image: req.body.image,
-        category: req.body.category,
-        new_price: req.body.new_price,
-        old_price: req.body.old_price,
+        id:id,
+        name:req.body.name,
+        image:req.body.image,
+        category:req.body.category,
+        new_price:req.body.new_price,
+        old_price:req.body.old_price,
+
     });
+    console.log(product);
     await product.save();
+    console.log("saved");
     res.json({
-        success: true,
-        name: req.body.name,
-    });
-});
+        success:true,
+        name:req.body.name,
+    })
+})
 
-// Ürün silme rotası
-app.post('/removeproduct', async (req, res) => {
-    await Product.findOneAndDelete({ id: req.body.id });
+//API ürün silme
+app.post('/removeproduct',async(req,res)=>{
+    await Product.findOneAndDelete({id:req.body.id});
+    console.log("remove");
     res.json({
-        success: true,
-        name: req.body.name
-    });
-});
+        success:true,
+        name:req.body.name
+    })
+})
 
-// Tüm ürünleri listeleme rotası
-app.get('/allproducts', async (req, res) => {
+// Tum urunleri listelemek icin API
+
+app.get('/allproducts',async (req,res)=>{
     let products = await Product.find({});
+    console.log("All products Fetched");
     res.send(products);
-});
+})
 
-// Kullanıcı modeli
-const User = mongoose.model("User", {
-    name: {
-        type: String,
+// Kullanici modeli icin sema olusturma
+
+const Users = mongoose.model("Users", {
+    name:{
+        type:String,
     },
-    email: {
-        type: String,
-        unique: true,
+    email:{
+        type:String,
+        unique:true,
     },
-    password: {
-        type: String,
+    password:{
+        type:String,
     },
-    cartData: {
-        type: Object,
+    cartData:{
+        type:Object,
     },
-    date: {
-        type: Date,
-        default: Date.now,
+    date:{
+        type:Date,
+        default:Date.now,
     }
-});
+})
 
-// Kullanıcı kayıt rotası
-app.post('/signup', async (req, res) => {
-    let check = await User.findOne({ email: req.body.email });
-    if (check) {
-        return res.status(400).json({ success: false, errors: "existing user found with same email address" });
+// Kullanici kayit olma semasi
+
+app.post('/signup',async (req,res)=>{
+    
+    let check = await Users.findOne({email:req.body.email});  //veritabaninda e-posta adresi ile bir kullanici olup olmadıgini kontrol eder
+    if(check) {
+        return res.status(400).json({success:false,errors:"existing user found with same email address"})  // var ise boyle bir email var hatasi dondurur
     }
 
     let cart = {};
-    for (let i = 0; i < 300; i++) {
-        cart[i] = 0;
+    for (let i = 0; i < 300; i++) {  //sepet icin baslangicta 300 urunluk bos bir obje olusturur
+        cart[i]= 0;
+        
     }
 
-    const user = new User({
-        name: req.body.username,
-        email: req.body.email,
-        password: req.body.password,
-        cartData: cart,
-    });
+    const user = new Users({  // yeni bir kullanici nesnesi
+        name:req.body.username,
+        email:req.body.email,
+        password:req.body.password,
+        cartData:cart,
+    })
 
-    await user.save();
+    await user.save();  //kullaniciyi kayit eder
 
-    const data = {
-        user: {
-            id: user.id
+    const data = {  //JWT oluşturmak için gerekli kullanıcı verilerini hazırlar
+        user:{
+            id:user.id
         }
-    };
+    }
 
-    const token = jwt.sign(data, 'secret_ecom');
-    res.json({ success: true, token });
-});
+    const token = jwt.sign(data,'secret_ecom');  // Kullanıcıya bir JWT (JSON Web Token) oluşturur ve 'secret_ecom' anahtarı ile imzalar
+    res.json({success:true,token})  //kullanici kaydi basariyla tamamlandiini ve tokeni dondurur.
 
-// Kullanıcı giriş rotası
-app.post('/login', async (req, res) => {
-    let user = await User.findOne({ email: req.body.email });
-    if (user) {
-        const passCompare = req.body.password === user.password;
-        if (passCompare) {
+})
+// kullanıcı giriş için endpoint
+app.post('/login',async (req,res)=>{
+    let user = await Users.findOne({email:req.body.email});
+    if(user){
+        const passCompare = req.body.password === user.password;//şifre karşılaştırması
+        if(passCompare){
             const data = {
-                user: {
-                    id: user.id
+                user:{
+                    id:user.id
                 }
-            };
-            const token = jwt.sign(data, 'secret_ecom');
-            res.json({ success: true, token });
-        } else {
-            res.json({ success: false, errors: "Wrong password" });
+            }
+            const token = jwt.sign(data,'secret_ecom');
+            res.json({success:true,token});// eğer şifre doğruysa
         }
-    } else {
-        res.json({ success: false, errors: "Wrong email id" });
+        else{
+            res.json({success:false,errors:"Wrong password"});
+        }
     }
-});
+    else{
+        res.json({success:false,errors:"Wrong email id"});
+    }
+})
 
-// Yeni koleksiyonlar rotası
+
+//NewCollections olusturma endopint
+
 app.get('/newcollections', async (req, res) => {
-    let products = await Product.find({});
+	let products = await Product.find({});
     let newcollection = products.slice(1).slice(-8);
+    console.log("New Collections Fetched");
     res.send(newcollection);
-});
+})
 
-// Popüler kadın ürünleri rotası
+//Popular in Women bolumunu olusturma endpointi
+
 app.get('/popularinwomen', async (req, res) => {
-    let products = await Product.find({ category: "women" });
-    let popular_in_women = products.splice(0, 4);
+	let products = await Product.find({category: "women"});
+    let popular_in_women = products.splice(0,  4);
+    console.log("Popular In Women Fetched");
     res.send(popular_in_women);
 });
 
-// Token doğrulama
-const fetchUser = async (req, res, next) => {
-    const token = req.header('auth-token');
-    if (!token) {
-        res.status(401).send({ errors: "Lütfen geçerli token kullanarak kimlik doğrulaması yapın" });
-    } else {
-        try {
-            const data = jwt.verify(token, 'secret_ecom');
-            req.user = data.user;
-            next();
-        } catch (error) {
-            res.status(401).send({ errors: "Lütfen token ile doğrulama yapın" });
+// Admin kullanici siparis goruntulume endpoint
+
+    const fetchUser = async (req,res,next)=>{
+        const token = req.header('auth-token');
+        if (!token) {
+            res.status(401).send({errors:"lütfen geçerli token kullanarak kimlik doğrulaması yapın "})
+            
+        }
+        else{
+            try {
+                const data = jwt.verify(token,'secret_ecom');
+                req.user = data.user;
+                next();
+            } catch (error) {
+                res.status(401).send({errors:"Lutfen token ile dogrulama yapin"})
+            }
         }
     }
-};
 
-// Sepete ürün ekleme rotası
-app.post('/addtocart', fetchUser, async (req, res) => {
-    let userData = await User.findOne({ _id: req.user.id });
+// sepete urun ekleme endpoint
+
+app.post('/addtocart',fetchUser,async (req,res)=>{
+    console.log("Added",req.body.itemId);
+    //console.log(req.body,req.user);
+
+    let userData = await Users.findOne({_id:req.user.id});
     userData.cartData[req.body.itemId] += 1;
-    await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
-    res.send("Added");
-});
+    await Users.findOneAndUpdate({_id:req.user.id},{cartData:userData.cartData});
+    // Kullanici siparsini artirma ve veritabaninda gosterme
+    res.send("Added")
 
-// Sepetten ürün çıkarma rotası
-app.post('/removefromcart', fetchUser, async (req, res) => {
-    let userData = await User.findOne({ _id: req.user.id });
-    if (userData.cartData[req.body.itemId] > 0)
-        userData.cartData[req.body.itemId] -= 1;
-    await User.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
-    res.send("Removed");
-});
+})
 
-// Sepet bilgisi getirme rotası
+//Sepetten urun silme endpoint
+
+app.post('/removefromcart',fetchUser,async (req,res)=>{
+    console.log("removed",req.body.itemId);
+    let userData = await Users.findOne({_id:req.user.id});
+    if(userData.cartData[req.body.itemId]>0)
+    userData.cartData[req.body.itemId] -= 1;
+    await Users.findOneAndUpdate({_id:req.user.id},{cartData:userData.cartData});
+    // Kullanici siparsini azaltma ve veritabaninda gosterme
+    res.send("Removed")
+
+})
+
+//Sepet bilgisi getirme endpoint
+
 app.post('/getcart', fetchUser, async (req, res) => {
-    let userData = await User.findOne({ _id: req.user.id });
+    console.log("Get Cart");
+    let userData = await Users.findOne({_id:req.user.id});
     res.json(userData.cartData);
   
 })
-
-//Kullanici Bilgileri endpoint
-app.get('/user', fetchUser, async (req, res) => {
-    try {
-        let user = await Users.findById(req.user.id).select('-password');
-        res.json(user);
-    } catch (error) {
-        res.status(500).send("Server Error");
-    }
-});
-
 
 
 
@@ -280,4 +298,3 @@ app.listen(port,(error)=>{
         console.log("Error : +error")
     }
 })
-
